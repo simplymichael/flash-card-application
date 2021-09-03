@@ -2,16 +2,18 @@ version: "3"
 services:
   api:
     container_name: "${APP_NAME}_api"
-    image: node:13.10.1
+    image: node:14.15.5
     command: [bash, -c, "npm install --only=production && npm start"]
     restart: always
     working_dir: /usr/src/app/api/
     volumes:
-      - ../backend:/usr/src/app/api/
+      - ../api:/usr/src/app/api/
     networks:
       - web
       - mongo
       - redis
+    ports:
+      - "${PRISMA_STUDIO_PORT}:5555"
     depends_on:
       - mongo
       - redis
@@ -34,8 +36,8 @@ services:
       retries: 10
   client:
     container_name: "${APP_NAME}_client"
-    image: node:13.10.1
-    command: [bash, -c, "yarn install --only=production && yarn build && yarn start"]
+    image: node:14.15.5
+    command: [bash, -c, "yarn install --only=production && yarn build"]
     restart: always
     working_dir: /usr/src/app/client/
     volumes:
@@ -131,7 +133,7 @@ services:
       - mongo-express
   redis:
     container_name: "${APP_NAME}_redis"
-    image: redis:5.0.8
+    image: redis:6.2.5
     restart: always
     volumes:
       - ./data/redis:/data
