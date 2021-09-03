@@ -1,0 +1,37 @@
+version: "3"
+services:
+  mongo:
+    # Fix error: Failed to start up WiredTiger under any compatibility version.
+    # Basically, it is not possible to mount mongodb data directory
+    # using the shared folders of the Windows virtual machine
+    # which uses VirtualBox.
+    # Instead, create a docker volume: docker volume create --name=mongodata
+    # and bind/mount that volume to the mongodb storage location
+    # See: https://stackoverflow.com/a/55607565/1743192
+    # and: https://github.com/docker-library/mongo/issues/74#issuecomment-350034758
+    #
+    # I searched for a way to detect the OS of the host on which docker is running.
+    # I wanted to use it thus:
+    # - If running on (my local) Windows OS, use the mongodata named volume
+    #   because of the impossibility mentioned above.
+    # - If running on Linux system, mount a local directory,
+    #   since it is possible on Linux.
+    # But I came across this discussion: https://superuser.com/a/1471252/867025
+    # And I opted instead to create a Windows-specific docker-compose file.
+    # That way, I can pass it to the docker-compose as a file argument.
+    #
+    # For now, though, I am not using this.
+    # So, the main compose file still contains same code (for volume) as this,
+    # rather than a locally mounted volume.
+    # The reason I wanted a locally mounted volume is for persistence and
+    # backup purposes. However, named volumes can serve the same purposes:
+    # 1. It persists even after the container is stopped and removed.
+    # 2. As per the official docs: https://hub.docker.com/_/mongo,
+    # I can run: `docker exec some-mongo sh -c 'exec mongodump -d <database_name> \
+    # --archive' > /some/path/on/your/host/all-collections.archive`
+    # to backup my database.
+    volumes:
+      - mongodata:/data/db
+      - ./conf/mongo/mongo.init.sh:/docker-entrypoint-initdb.d/mongo.init.sh:ro
+volumes:
+  mongodata:

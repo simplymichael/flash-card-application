@@ -1,0 +1,159 @@
+version: "3"
+services:
+  api:
+    container_name: "${APP_NAME}_api"
+    image: node:13.10.1
+    command: [bash, -c, "npm install --only=production && npm start"]
+    restart: always
+    working_dir: /usr/src/app/api/
+    volumes:
+      - ../backend:/usr/src/app/api/
+    networks:
+      - web
+      - mongo
+      - redis
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      ENABLE_HTTPS: 1
+      MONGODB_HOST: mongo
+      MONGODB_PORT: "27017"
+      MONGODB_USERNAME: "${MONGODB_USER}"
+      MONGODB_PASSWORD: "${MONGODB_PASSWORD}"
+      MONGODB_DBNAME: "${MONGODB_DATABASE}"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+     # "Wait" for the mongodb server to be ready to accept connections
+     # https://docs.docker.com/compose/compose-file/#healthcheck
+     # https://stackoverflow.com/q/54384042/1743192
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet 1
+      interval: 60s
+      timeout: 30s
+      retries: 10
+  client:
+    container_name: "${APP_NAME}_client"
+    image: node:13.10.1
+    command: [bash, -c, "yarn install --only=production && yarn build && yarn start"]
+    restart: always
+    working_dir: /usr/src/app/client/
+    volumes:
+      - ../frontend:/usr/src/app/client/
+    networks:
+      - web
+    depends_on:
+      - api
+    environment:
+      # Every request comes into the nginx server, via ports: 80, 443, 0r 3000,
+      # which routes them (using the default.conf file) as follows:
+      # - 80 -> 443
+      # - 443 -> http://client:443
+      # - 3000 -> https://api:443
+      #
+      # The ports and the protocols are used by the frontend Service class
+      # to generate the url to make requests to the:
+      # - frontend api (nextjs api pages): using APP_* variables
+      # - backend api : using BACKEND_* variables
+      # The 'http(s)://' prefix is because
+      # our requests, on the SSR side of things, require absolute URLs
+      #
+      # We strictly override/enforce them here,
+      # rather than use the ones in the frontend/.env files
+      # so  that if you are using the docker-compose file,
+      # in so far as you properly configure your frontend/backend hosts
+      # inside the frontend/.env file, it will work,
+      # because the ports here are the same used by the nginx default.conf file.
+      # And the 'https' assumes you are on an https-enable host.
+      APP_PORT: 443
+      BACKEND_PORT: 3000
+      APP_PROTOCOL: "https"
+      BACKEND_PROTOCOL: "https"
+  nginx:
+    container_name: "${APP_NAME}_nginx"
+    restart: always
+    image: nginx:1.17.9
+    depends_on:
+      - client
+    ports:
+      - "80:80"
+      - "443:443"
+      - "3000:3000"
+    volumes:
+      - ./ssl/keys/:/etc/letsencrypt/
+      - ./data/nginx/cache/:/etc/nginx/cache
+      - ./conf/nginx/html:/usr/share/nginx/html
+      - ./logs/nginx/logs/error.log:/etc/nginx/error_log.log
+      - ./logs/nginx/logs/access.log:/etc/nginx/access_log.log
+      - ./conf/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - web
+    #environment:
+      #https://stackoverflow.com/a/57891894/1743192 :
+      #  - FORWARD_HOST: "${APP_NAME}_client"
+      #command: bash -c "envsubst < /etc/nginx/conf.d/mysite.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+  mongo:
+    container_name: "${APP_NAME}_mongo"
+    image: mongo:4.0.16
+    restart: always
+    # Fix error: Failed to start up WiredTiger under any compatibility version.
+    # Basically, it is not possible to mount mongodb data directory
+    # using the shared folders of the Windows virtual machine
+    # which uses VirtualBox.
+    # Instead, create a docker volume: docker volume create --name=mongodata
+    # and bind/mount that volume to the mongodb storage location
+    # See: https://stackoverflow.com/a/55607565/1743192
+    # and: https://github.com/docker-library/mongo/issues/74#issuecomment-350034758
+    volumes:
+      - mongodata:/data/db
+      - ./conf/mongo/mongo.init.sh:/docker-entrypoint-initdb.d/mongo.init.sh:ro
+    networks:
+      - mongo
+    environment:
+      # MONGO_DATA_DIR: https://stackoverflow.com/q/59166728/1743192
+      # While searching for how to delete and recreate my mongodb database
+      # as it was not authenticating the user
+      # because initially I used empty user and password
+      #MONGO_DATA_DIR: /data/db
+      MONGO_INITDB_DATABASE: "${MONGODB_DATABASE}"
+      MONGO_INITDB_ROOT_USERNAME: "${MONGODB_ROOT_USER}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_ROOT_PASSWORD}"
+
+      # These are not part of the official docs ENV variables
+      # They are arbitrary, only used with the inti script
+      # cf: https://stackoverflow.com/a/53522699/1743192
+      # Also see:
+      # - https://forums.docker.com/t/create-new-database-in-mongodb-with-docker-compose/58306/3
+      # - https://stackoverflow.com/a/44233040/1743192
+      MONGO_NON_ROOT_USERNAME: "${MONGODB_USER}"
+      MONGO_NON_ROOT_PASSWORD: "${MONGODB_PASSWORD}"
+    links:
+      - mongo-express
+  redis:
+    container_name: "${APP_NAME}_redis"
+    image: redis:5.0.8
+    restart: always
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - redis
+  mongo-express:
+    container_name: "${APP_NAME}_mongo-express"
+    image: mongo-express:0.54.0
+    restart: always
+    ports:
+      - "${MONGO_EXPRESS_PORT}:8081"
+    networks:
+      - mongo
+    environment:
+      # Don't specify the mondodb user creds.
+      # Specify the mongodb admin/root user creds
+      # https://github.com/mongo-express/mongo-express/issues/352#issuecomment-421545924
+      ME_CONFIG_MONGODB_ADMINUSERNAME: "${MONGODB_ROOT_USER}"
+      ME_CONFIG_MONGODB_ADMINPASSWORD: "${MONGODB_ROOT_PASSWORD}"
+volumes:
+  mongodata:
+networks:
+  web:
+  mongo:
+  redis:

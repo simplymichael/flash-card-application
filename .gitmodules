@@ -1,0 +1,6 @@
+[submodule "api"]
+	path = api
+	url = https://github.com/simplymichael/flash-cards.git
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/simplymichael/flash-front.git
