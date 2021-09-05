@@ -27,10 +27,10 @@ For local development, follow the steps below:
 - Run `openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out keys/pubkey.crt -days 500 -sha256 -extfile v3.ext`
 - Run `cat keys/pubkey.crt rootCA.pem > keys/fullchain.pem`
 - Run
-  - `mkdir -p ../docker/ssl ../backend/ssl`
+  - `mkdir -p ../docker/ssl ../api/ssl`
 - Run
   - `cp -r keys ../docker/ssl`
-  - `cp -r keys ../backend/ssl`
+  - `cp -r keys ../api/ssl`
 - [Optional] delete the *keys/* folder
 
 ## Testing/debugging (your) SSL (certificate) chains

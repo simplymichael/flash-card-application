@@ -8,7 +8,7 @@
 
 ## Pre-requisites
 Before running,
-- Copy (and fill) the ***/backend/.env.example*** file to ***/backend/.env***
+- Copy (and fill) the ***/api/.env.example*** file to ***/api/.env***
 - Copy (and fill) the ***/frontend/.env.example*** file to ***/frontend/.env***
 - Copy (and fill) the ***./.env-docker.example*** file to ***/.env***
 - **cd** into this directory: `cd docker`
@@ -32,31 +32,25 @@ because of the dependency tree:
 - **nginx** depends on
 - **client** which links
 - **api** which depends on
-- **mongo** (links **mongo-express**), **mysql** (links **adminer**), **redis**.
+- **mongo** (links **mongo-express**), **redis**.
 
 ## Log into container
 `docker exec -ti <container_name> /bin/bash`
 
 ## Notes
 This compose file includes support for the following web-based database gui-clients:
-- **adminer**: for MySQL
 - **mongo-express**: for MongoDB
 
 To disable the gui clients, open the **docker-compose.yml** file, then:
-  - comment out the ***links*** section in the **mongo** and **mysql** services.
-  - comment out the **adminer** and **mongo-express** services.
+  - comment out the ***links*** section in the **mongo** service.
+  - comment out the **mongo-express** service.
 
 To enable and use the gui clients,
-  1. Uncomment the ***adminer*** and ***mongo-express*** links in the **docker-compose.yml** file
+  1. Uncomment the ***mongo-express*** link in the **docker-compose.yml** file
   2. Run the `docker-compose up` command.
   3. Navigate to the respective gui client url:
-     - for MySQL: **http://localhost:<ADMINER_PORT>**
      - for MongoDB: **http://localhost:<MONGO_EXPRESS_PORT>**
   4. Login with the following credentials:
-     - MySQL:
-       - database: *<MYSQL_DBNAME>_mysql*
-       - username: *root*
-       - password: *<MYSQL_ROOT_PASSWORD>*
      - MongoDB:
        - username: *<MONGODB_USERNAME>*
        - password: *<MONGODB_PASSWORD>*
