@@ -19,8 +19,7 @@ services:
       - redis
     environment:
       ENABLE_HTTPS: 1
-      ALLOWED_ORIGINS: "https://localhost client:8080"
-      DATABASE_URL: "postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
+      ALLOWED_ORIGINS: "https://localhost"
       MONGODB_HOST: mongo
       MONGODB_PORT: "27017"
       MONGODB_USERNAME: "${MONGODB_USER}"
@@ -48,7 +47,7 @@ services:
       - web
     depends_on:
       - api
-    environment:
+    #environment:
       # Every request comes into the nginx server, via ports: 80, 443, 0r 3000,
       # which routes them (using the default.conf file) as follows:
       # - 80 -> 443
@@ -73,10 +72,6 @@ services:
       #APP_PROTOCOL: "https"
       #API_PORT: 3000
       #API_PROTOCOL: "https"
-      APP_HOST: "localhost"
-      APP_PORT: 8080
-      APP_PROTOCOL: "http"
-      API_URL: "http://localhost:3000/graphql"
   nginx:
     container_name: "${APP_NAME}_nginx"
     restart: always
@@ -91,8 +86,8 @@ services:
       - ./ssl/keys/:/etc/letsencrypt/
       - ./data/nginx/cache/:/etc/nginx/cache
       - ./conf/nginx/html:/usr/share/nginx/html
-      - ./logs/nginx/logs/error.log:/etc/nginx/error_log.log
-      - ./logs/nginx/logs/access.log:/etc/nginx/access_log.log
+      - ./logs/nginx/error.log:/etc/nginx/error_log.log
+      - ./logs/nginx/access.log:/etc/nginx/access_log.log
       - ./conf/nginx/default.conf:/etc/nginx/conf.d/default.conf
     networks:
       - web

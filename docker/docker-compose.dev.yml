@@ -1,12 +1,14 @@
 version: "3"
 services:
   api:
-    command: [bash, -c, "npm install && npm run dev"]
+    command: [bash, -c, "mkdir -p -m 777 .data && npm install --only=production && npm run prisma:generate && node src/index.js"]
+    environment:
+      DATABASE_URL: "file:../../.data/prisma.dev.db"
   client:
     command: [bash, -c, "yarn install && yarn start"]
-    volumes:
-      - ../ssl:/usr/src/app/ssl/:ro
-    environment:
+    #volumes:
+    #  - ../ssl:/usr/src/app/ssl/:ro
+    #environment:
       # Override the HOSTs set inside the frontend/.env file
       # because when making calls to the
       # frontend (client) and backend (api) services,
@@ -15,8 +17,8 @@ services:
       # not the host set in the .env file.
       # We prepend it with the "http(s)://" scheme since the request module
       # which we use to make calls only supports htttp(s) protocols
-      APP_HOST: nginx
-      BACKEND_HOST: nginx
+      #APP_HOST: nginx
+      #API_HOST: nginx
 
       # WARNING: Temporarily disable the self-signed certificate error
       # Remember to remove this line on live production
@@ -30,7 +32,7 @@ services:
       # - reason: self-signed certificate (fixed by creating trusted self-signed certificate, see process in the <root>/ssl/directory)
       # - reason: unable to verify the first certificate (fixed by creating a fullchain.pem file)
       # - reason: self signed certificate in certificate chain (fixed by adding my rootCA.pem to Node's internal trusted CAs)
-      NODE_EXTRA_CA_CERTS: "/usr/src/app/ssl/keys/rootCA.pem"
+      #NODE_EXTRA_CA_CERTS: "/usr/src/app/ssl/keys/rootCA.pem"
   mongo:
     ports:
       - "${MONGODB_PORT}:27017"
