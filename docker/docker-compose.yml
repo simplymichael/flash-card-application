@@ -3,7 +3,7 @@ services:
   api:
     container_name: "${APP_NAME}_api"
     image: node:14.15.5
-    command: [bash, -c, "npm install --only=production && npm run prisma:generate && node src/index.js"]
+    command: [bash, -c, "npm install --only=production && npm run prisma:deploy && npm run prisma:generate && node src/index.js"]
     restart: always
     working_dir: /usr/src/app/api/
     volumes:
