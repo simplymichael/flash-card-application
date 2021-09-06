@@ -1,7 +1,7 @@
 version: "3"
 services:
   api:
-    command: [bash, -c, "mkdir -p -m 777 .data && npm install --only=production && npm run prisma:generate && node src/index.js"]
+    command: [bash, -c, "mkdir -p -m 777 .data && npm install --only=production && npm run prisma:deploy && npm run prisma:generate && node src/index.js"]
     environment:
       DATABASE_URL: "file:../../.data/prisma.dev.db"
   client:
