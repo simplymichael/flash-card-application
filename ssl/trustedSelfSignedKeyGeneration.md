@@ -7,13 +7,15 @@ Instead use one of the free SSL generators out there like:
 - [Let's Encrypt - Free SSL/TLS Certificates](letsencrypt.org)
 Once generated, copy the keys generated to the following locations:
 - copy the private key to the following locations:
-  - **backend/ssl/keys/privkey.pem**
-  - **docker/ssl/keys/privkey.pem**
+    - **api/ssl/{development|production|staging}/privkey.pem**
+    - **docker/ssl/keys/privkey.pem**
 - copy the public key/certificate to the following locations:
- - **backend/ssl/keys/pubkey.crt**
+ - **api/ssl/{development|production|staging}/pubkey.crt**
  - **docker/ssl/keys/pubkey.crt**
-- Create a fullchain.pem using the instructions found <a href="creating-a-fullchain-ca-bundle.md">here</a>.
-- copy the fullchain.pem to **docker/ssl/keys/fullchain.pem**.
+- Create a *fullchain.pem* using the instructions found <a href="creating-a-fullchain-ca-bundle.md">here</a>.
+- copy the *fullchain.pem* to the following locations:
+    - **api/ssl/{development|production|staging}/fullchain.pem**
+    - **docker/ssl/keys/fullchain.pem**
 
 For local development, follow the steps below:
 - cd into this directory: `cd <path_to_app>/ssl`
@@ -26,14 +28,16 @@ For local development, follow the steps below:
   or interactively `openssl req -new -sha256 -nodes -out server.csr -newkey rsa:2048 -keyout keys/privkey.pem`
 - Run `openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out keys/pubkey.crt -days 500 -sha256 -extfile v3.ext`
 - Run `cat keys/pubkey.crt rootCA.pem > keys/fullchain.pem`
+- Run `mkdir -p ../docker/ssl ../api/ssl`
 - Run
-  - `mkdir -p ../docker/ssl ../api/ssl`
-- Run
-  - `cp -r keys ../docker/ssl`
-  - `cp -r keys ../api/ssl`
-- [Optional] delete the *keys/* folder
+    - `cp -r keys ../docker/ssl`
+    - `cp -r keys ../api/ssl`.
+    - `mv ../api/ssl/keys ../api/ssl/development`
+- [Optional] delete the *keys/* folder inside this current (*ssl/*) directory:
+    - `rm -r ./keys`
 
-## Testing/debugging (your) SSL (certificate) chains
+## Miscellaneous knowledge
+### Testing/debugging (your) SSL (certificate) chains
 - [Test your SSL chains](https://serverfault.com/a/663692/441965):
   `openssl s_client -connect <hostname>:443 [-servername <hostname>]`
 - [Test your HTTPS effortlessly ](https://www.npmjs.com/package/ssl-root-cas)

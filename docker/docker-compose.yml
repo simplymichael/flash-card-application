@@ -19,6 +19,7 @@ services:
       - redis
     environment:
       ENABLE_HTTPS: 1
+      NODE_ENV: "production"
       ALLOWED_ORIGINS: "https://localhost"
       MONGODB_HOST: mongo
       MONGODB_PORT: "27017"
@@ -27,9 +28,10 @@ services:
       MONGODB_DBNAME: "${MONGODB_DATABASE}"
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-     # "Wait" for the mongodb server to be ready to accept connections
-     # https://docs.docker.com/compose/compose-file/#healthcheck
-     # https://stackoverflow.com/q/54384042/1743192
+
+    # "Wait" for the mongodb server to be ready to accept connections
+    # https://docs.docker.com/compose/compose-file/#healthcheck
+    # https://stackoverflow.com/q/54384042/1743192
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet 1
       interval: 60s

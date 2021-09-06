@@ -1,9 +1,23 @@
 version: "3"
 services:
   api:
-    command: [bash, -c, "mkdir -p -m 777 .data && npm install --only=production && npm run prisma:deploy && npm run prisma:generate && node src/index.js"]
+    command: [bash, -c, "npm install --only=production && npm run prisma:deploy && npm run prisma:generate && node src/index.js"]
+    volumes:
+      # Used when we are using sqlite file-based storage,
+      # Works in tandem with the DATABASE_URL environment variable.
+      # In such cases where we are using a sqlite file-based storage,
+      # the DATABASE_URL environment value should follow the syntax:
+      #  "file:/data/prisma/[DATABASE_NAME].db"
+      # When using a database other than sqlite or file-based storage,
+      # This volume has no effect, that is, it does nothing, and can be commented out
+      - ./data/prisma/:/data/prisma/
     environment:
-      DATABASE_URL: "file:../../.data/prisma.dev.db"
+      NODE_ENV: "development"
+
+      # Overwrite the database URL and use sqlite file storage
+      # This should be commented out or changed to the appropriate
+      # data-source URL if not using a (sqlite) file-based data storage
+      DATABASE_URL: "file:/data/prisma/dev.db"
   client:
     command: [bash, -c, "yarn install && yarn start"]
     #volumes:
