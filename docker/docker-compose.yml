@@ -49,31 +49,6 @@ services:
       - web
     depends_on:
       - api
-    #environment:
-      # Every request comes into the nginx server, via ports: 80, 443, 0r 3000,
-      # which routes them (using the default.conf file) as follows:
-      # - 80 -> 443
-      # - 443 -> http://client:443
-      # - 3000 -> https://api:443
-      #
-      # The ports and the protocols are used by the frontend Service class
-      # to generate the url to make requests to the:
-      # - frontend api (nextjs api pages): using APP_* variables
-      # - backend api : using BACKEND_* variables
-      # The 'http(s)://' prefix is because
-      # our requests, on the SSR side of things, require absolute URLs
-      #
-      # We strictly override/enforce them here,
-      # rather than use the ones in the frontend/.env files
-      # so  that if you are using the docker-compose file,
-      # in so far as you properly configure your frontend/backend hosts
-      # inside the frontend/.env file, it will work,
-      # because the ports here are the same used by the nginx default.conf file.
-      # And the 'https' assumes you are on an https-enable host.
-      #APP_PORT: 443
-      #APP_PROTOCOL: "https"
-      #API_PORT: 3000
-      #API_PROTOCOL: "https"
   nginx:
     container_name: "${APP_NAME}_nginx"
     restart: always
@@ -81,6 +56,12 @@ services:
     depends_on:
       - client
     ports:
+      # Every request comes into the nginx server, via ports: 80, 443, 0r 3000,
+      # which routes them (using the default.conf file) as follows:
+      # - 80 -> 443
+      # - 443 -> http://client:8080 (serves the application frontend)
+      # - 3000 -> https://api:443 (serves the application backend/api)
+      #
       - "80:80"
       - "443:443"
       - "3000:3000"
