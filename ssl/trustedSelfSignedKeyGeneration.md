@@ -24,17 +24,16 @@ For local development, follow the steps below:
   for a non password protected key, `openssl genrsa -out rootCA.key 2048`
 - Run `openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 1024 -out rootCA.pem`
 - Add the ***rootCA.pem*** file to your trusted certificates. This is OS specific.
+- Run `mkdir -p keys`
 - Run `openssl req -new -sha256 -nodes -out server.csr -newkey rsa:2048 -keyout keys/privkey.pem -config <( cat server.csr.cnf )`
   or interactively `openssl req -new -sha256 -nodes -out server.csr -newkey rsa:2048 -keyout keys/privkey.pem`
 - Run `openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out keys/pubkey.crt -days 500 -sha256 -extfile v3.ext`
 - Run `cat keys/pubkey.crt rootCA.pem > keys/fullchain.pem`
 - Run `mkdir -p ../docker/ssl ../api/ssl`
 - Run
-    - `cp -r keys ../docker/ssl`
-    - `cp -r keys ../api/ssl`.
-    - `mv ../api/ssl/keys ../api/ssl/development`
-- [Optional] delete the *keys/* folder inside this current (*ssl/*) directory:
-    - `rm -r ./keys`
+    - `cp -ur keys ../docker/ssl`
+    - `mkdir -p ../api/ssl/development && cp -ur keys/* ../api/ssl/development`.
+- [Optional clean-up]: Run `rm -r ./keys ./rootCA.key ./rootCA.pem ./rootCA.srl`
 
 ## Miscellaneous knowledge
 ### Testing/debugging (your) SSL (certificate) chains
