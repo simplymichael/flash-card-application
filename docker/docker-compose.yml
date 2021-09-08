@@ -3,7 +3,13 @@ services:
   api:
     container_name: "${APP_NAME}_api"
     image: node:14.15.5
-    command: [bash, -c, "npm install --only=production && npm run prisma:deploy && npm run prisma:generate && node src/index.js"]
+
+    # (In production mode) after running "npm start" which uses PM2, PM2 takes over and 
+    # this container (has nothing doing and) exits with code 0 (zero)
+    # This causes issues when our client service tries to make requests to our API/backend.
+    # The "tail -F /dev/null" command makes sure this container does not exit.
+    # Credits: https://stackoverflow.com/a/45450456/1743192
+    command: [bash, -c, "npm install --only=production && npm run prisma:deploy && npm run prisma:generate && npm start && tail -F /dev/null"]
     restart: always
     working_dir: /usr/src/app/api/
     volumes:
@@ -44,7 +50,7 @@ services:
     # (In production mode) after creating our build,
     # this container has nothing doing and exits with code 0 (zero)
     # This causes our nginx service, which depends on this service, not to start.
-    # The "tail -F /dev/null" command makes sure this container does not esit.
+    # The "tail -F /dev/null" command makes sure this container does not exit.
     # Credits: https://stackoverflow.com/a/45450456/1743192
     command: [bash, -c, "yarn install && yarn build && tail -F /dev/null"]
     restart: always
