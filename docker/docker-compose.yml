@@ -40,7 +40,13 @@ services:
   client:
     container_name: "${APP_NAME}_client"
     image: node:14.15.5
-    command: [bash, -c, "yarn install && yarn build"]
+
+    # (In production mode) after creating our build,
+    # this container has nothing doing and exits with code 0 (zero)
+    # This causes our nginx service, which depends on this service, not to start.
+    # The "tail -F /dev/null" command makes sure this container does not esit.
+    # Credits: https://stackoverflow.com/a/45450456/1743192
+    command: [bash, -c, "yarn install && yarn build && tail -F /dev/null"]
     restart: always
     working_dir: /usr/src/app/client/
     volumes:
