@@ -1,11 +1,14 @@
 ## Instructions
-This file contains instructions for generating trusted self-signed certificates for use on your localhost.
+This file contains instructions for generating trusted self-signed certificates for use on your localhost/development machine.
+
 **WARNING**: **DO NOT** use the keys generated here on a production server.
 Instead use one of the free SSL generators out there like:
 - [SSL For Free](sslforfree.com)
 - [Zero SSL](zerossl.com)
 - [Let's Encrypt - Free SSL/TLS Certificates](letsencrypt.org)
+
 Once generated, copy the keys generated to the following locations:
+
 - copy the private key to the following locations:
     - **api/ssl/{development|production|staging}/privkey.pem**
     - **docker/ssl/keys/privkey.pem**

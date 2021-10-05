@@ -4,45 +4,48 @@ services:
     container_name: "${APP_NAME}_api"
     image: node:14.15.5
 
-    # (In production mode) after running "npm start" which uses PM2, PM2 takes over and 
+    # (In production mode) after running "npm start" which uses PM2, PM2 takes over and
     # this container (has nothing doing and) exits with code 0 (zero)
     # This causes issues when our client service tries to make requests to our API/backend.
     # The "tail -F /dev/null" command makes sure this container does not exit.
     # Credits: https://stackoverflow.com/a/45450456/1743192
-    command: [bash, -c, "npm install --only=production && npm run prisma:deploy && npm run prisma:generate && npm start && tail -F /dev/null"]
+    command: [bash, -c, "npm install --only=production && npm run prisma:generate && npm start && tail -F /dev/null"]
     restart: always
     working_dir: /usr/src/app/api/
     volumes:
       - ../api:/usr/src/app/api/
     networks:
       - web
-      - mongo
-      - redis
     ports:
-      - "${PRISMA_STUDIO_PORT}:5555"
-    depends_on:
-      - mongo
-      - redis
+      - ${API_PRISMA_STUDIO_PORT}:5555
     environment:
+      APP_NAME: "${APP_NAME}"
+      APP_HOST: "${API_APP_HOST}"
+      #we don't set APP_PORT since the server automatically uses 443 when HTTPS enabled
       ENABLE_HTTPS: 1
       NODE_ENV: "production"
-      ALLOWED_ORIGINS: "https://localhost"
-      MONGODB_HOST: mongo
-      MONGODB_PORT: "27017"
-      MONGODB_USERNAME: "${MONGODB_USER}"
-      MONGODB_PASSWORD: "${MONGODB_PASSWORD}"
-      MONGODB_DBNAME: "${MONGODB_DATABASE}"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
+      SESSION_EXPIRY: "${API_SESSION_EXPIRY}"
+      SESSION_SECRET: "${API_SESSION_SECRET}"
+      BCRYPT_SALT_ROUNDS: "${API_BCRYPT_SALT_ROUNDS}"
+      REMEMBER_ME_DAYS: ${API_REMEMBER_ME_DAYS}"
+      ALLOWED_ORIGINS: "${API_ALLOWED_ORIGINS}"
+      DATABASE_URL: "${API_DATABASE_URL}"
+      REDIS_HOST: "${API_REDIS_HOST}"
+      REDIS_PORT: "${API_REDIS_PORT}"
+      DEFAULT_CARDS_PER_PAGE: "${API_DEFAULT_CARDS_PER_PAGE}"
+      DEFAULT_USERS_PER_PAGE: "${API_DEFAULT_USERS_PER_PAGE}"
+      DEFAULT_CATEGORIES_PER_PAGE: "${API_DEFAULT_CATEGORIES_PER_PAGE}"
+      DEFAULT_COLLECTIONS_PER_PAGE: "${API_DEFAULT_COLLECTIONS_PER_PAGE}"
+      PRISMA_STUDIO_PORT: "${API_PRISMA_STUDIO_PORT}"
 
     # "Wait" for the mongodb server to be ready to accept connections
     # https://docs.docker.com/compose/compose-file/#healthcheck
     # https://stackoverflow.com/q/54384042/1743192
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet 1
-      interval: 60s
-      timeout: 30s
-      retries: 10
+    #healthcheck:
+      #test: echo 'db.runCommand("ping").ok' | mongo "${API_DATABASE_URL}" --quiet 1
+      #interval: 60s
+      #timeout: 30s
+      #retries: 10
   client:
     container_name: "${APP_NAME}_client"
     image: node:14.15.5
@@ -61,6 +64,17 @@ services:
       - web
     depends_on:
       - api
+    environment:
+      APP_NAME: "${APP_NAME}"
+      # We don't set APP_PORT because it is automaticlally 80
+      # since every request comes via the nginx server/container
+      API_URL: "https://${API_APP_HOST}:${API_APP_PORT}/graphql"
+      GOOGLE_ANALYTICS_TRACKING_ID: "${CLIENT_GOOGLE_ANALYTICS_TRACKING_ID}"
+      CARDS_PER_PAGE: "${CLIENT_CARDS_PER_PAGE}"
+      USERS_PER_PAGE: "${CLIENT_USERS_PER_PAGE}"
+      CATEGORIES_PER_PAGE: "${CLIENT_CATEGORIES_PER_PAGE}"
+      COLLECTIONS_PER_PAGE: "${CLIENT_COLLECTIONS_PER_PAGE}"
+      CURRENT_USER_POLL_INTERVAL: "${CLIENT_CURRENT_USER_POLL_INTERVAL}"
   nginx:
     container_name: "${APP_NAME}_nginx"
     restart: always
@@ -71,12 +85,12 @@ services:
       # Every request comes into the nginx server, via ports: 80, 443, 0r 3000,
       # which routes them (using the default.conf file) as follows:
       # - 80 -> 443
-      # - 443 -> http://client:8080 (serves the application frontend)
+      # - 443 -> (serves the application frontend from /usr/shar/nginx/html/index.html)
       # - 3000 -> https://api:443 (serves the application backend/api)
       #
-      - "80:80"
+      - "${CLIENT_APP_PORT}:80"
       - "443:443"
-      - "3000:3000"
+      - "${API_APP_PORT}:3000"
     volumes:
       - ./ssl/keys/:/etc/letsencrypt/
       - ../frontend/build/:/usr/share/nginx/html/
@@ -87,68 +101,6 @@ services:
       #https://stackoverflow.com/a/57891894/1743192 :
       #  - FORWARD_HOST: "${APP_NAME}_client"
       #command: bash -c "envsubst < /etc/nginx/conf.d/mysite.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
-  mongo:
-    container_name: "${APP_NAME}_mongo"
-    image: mongo:4.4.4
-    restart: always
-    # Fix error: Failed to start up WiredTiger under any compatibility version.
-    # Basically, it is not possible to mount mongodb data directory
-    # using the shared folders of the Windows virtual machine
-    # which uses VirtualBox.
-    # Instead, create a docker volume: docker volume create --name=mongodata
-    # and bind/mount that volume to the mongodb storage location
-    # See: https://stackoverflow.com/a/55607565/1743192
-    # and: https://github.com/docker-library/mongo/issues/74#issuecomment-350034758
-    volumes:
-      - mongodata:/data/db
-      - ./conf/mongo/mongo.init.sh:/docker-entrypoint-initdb.d/mongo.init.sh:ro
-    networks:
-      - mongo
-    environment:
-      # MONGO_DATA_DIR: https://stackoverflow.com/q/59166728/1743192
-      # While searching for how to delete and recreate my mongodb database
-      # as it was not authenticating the user
-      # because initially I used empty user and password
-      #MONGO_DATA_DIR: /data/db
-      MONGO_INITDB_DATABASE: "${MONGODB_DATABASE}"
-      MONGO_INITDB_ROOT_USERNAME: "${MONGODB_ROOT_USER}"
-      MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_ROOT_PASSWORD}"
 
-      # These are not part of the official docs ENV variables
-      # They are arbitrary, only used with the inti script
-      # cf: https://stackoverflow.com/a/53522699/1743192
-      # Also see:
-      # - https://forums.docker.com/t/create-new-database-in-mongodb-with-docker-compose/58306/3
-      # - https://stackoverflow.com/a/44233040/1743192
-      MONGO_NON_ROOT_USERNAME: "${MONGODB_USER}"
-      MONGO_NON_ROOT_PASSWORD: "${MONGODB_PASSWORD}"
-    links:
-      - mongo-express
-  redis:
-    container_name: "${APP_NAME}_redis"
-    image: redis:6.2.5
-    restart: always
-    volumes:
-      - ./data/redis:/data
-    networks:
-      - redis
-  mongo-express:
-    container_name: "${APP_NAME}_mongo-express"
-    image: mongo-express:0.54.0
-    restart: always
-    ports:
-      - "${MONGO_EXPRESS_PORT}:8081"
-    networks:
-      - mongo
-    environment:
-      # Don't specify the mondodb user creds.
-      # Specify the mongodb admin/root user creds
-      # https://github.com/mongo-express/mongo-express/issues/352#issuecomment-421545924
-      ME_CONFIG_MONGODB_ADMINUSERNAME: "${MONGODB_ROOT_USER}"
-      ME_CONFIG_MONGODB_ADMINPASSWORD: "${MONGODB_ROOT_PASSWORD}"
-volumes:
-  mongodata:
 networks:
   web:
-  mongo:
-  redis:

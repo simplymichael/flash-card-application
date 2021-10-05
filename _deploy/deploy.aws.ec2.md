@@ -6,10 +6,10 @@ Cf. [How to move a local volume onto a remote docker machine](https://stackoverf
   So, don't use them as the ports for your data services.
 
 ### Prerequisites
-01. Create the machine: `docker-machine create --driver amazonec2 fleenex-machine`
-02. Point fleenex.com domain to the machine
-03. Test that fleenex.com is accessible after domain pointing
-04. Create SSL certificates for the fleenex.com domain: **fullchain.pem**, **privkey.pem**
+01. Create the machine: `docker-machine create --driver amazonec2 MACHINE_NAME`
+02. Point your domain name (e.g. example.com) to the machine
+03. Test that your domain (in this case, example.com) is accessible after domain pointing
+04. Create SSL certificates for the example.com domain: **fullchain.pem**, **privkey.pem**
     [reference](https://certbot.eff.org/lets-encrypt/ubuntuxenial-nginx)
     - **Add Certbot PPA**:
       - `sudo apt-get update`
@@ -19,19 +19,20 @@ Cf. [How to move a local volume onto a remote docker machine](https://stackoverf
       - `sudo apt-get update`
     - **Install Certbot**: `sudo apt-get install certbot python-certbot-nginx`
     - **Get a certificate**: `sudo certbot certonly --nginx`
-05. Test that fleenex.com is accessible on port 443: https://fleenex.com
+05. Test that example.com is accessible on port 443: https://example.com
 
 ### Deployment
-06. SSH into the machine: `docker-machine ssh fleenex-machine`
-07. Pull the repo into a fleenex/ directory: `git clone <fleenex-repo> fleenex`
-08. cd into cloned repo: `cd fleenex`
-09. Copy fleenex/backend/.env.example to fleenex/backend/.env: `cp ./backend/.env.example ./backend/.env`
-10. Edit fleenex/backend/.env file: `vi ./backend/.env`
-11. Perform steps 5 and 6 for frontend/.env, and docker/.env
-12. Copy the generated SSL certs into **backend/ssl/keys** and **docker/ssl/keys**
+06. SSH into the machine: `docker-machine ssh MACHINE_NAME`
+07. Pull the repo into a DESTINATION_DIRECTORY/ directory:
+    `git clone <GITHUB_REPO_URL> DESTINATION_DIRECTORY`
+08. cd into cloned repo: `cd DESTINATION_DIRECTORY`
+09. Copy DESTINATION_DIRECTORY/docker/.env-docker.example to DESTINATION_DIRECTORY/docker/.env:
+    `cp ./backend/.env.example ./backend/.env`
+10. Edit DESTINATION_DIRECTORY/docker/.env file: `vi ./docker/.env`
+11. Copy the generated SSL certs into **backend/ssl/keys** and **docker/ssl/keys**
     **Discovered**: *./ssl/letsencrypt/live is a symlink to ./ssl/letsencrypt/archive*
-    - `sudo cp /etc/letsencrypt/archive/fleenex.com/fullchain1.pem ./ssl/keys/fullchain.pem`
-    - `sudo cp /etc/letsencrypt/archive/fleenex.com/privkey1.pem ./ssl/keys/privkey.pem`
+    - `sudo cp /etc/letsencrypt/archive/example.com/fullchain1.pem ./ssl/keys/fullchain.pem`
+    - `sudo cp /etc/letsencrypt/archive/example.com/privkey1.pem ./ssl/keys/privkey.pem`
     - `sudo chmod +r ./ssl/keys/fullchain.pem`
     - `sudo chmod +r ./ssl/keys/privkey.pem` # I got a read-permission denied while trying to copy privkey.pem to backend/ and docker/
     - `mkdir -p ./docker/ssl/keys ./backend/ssl/keys`

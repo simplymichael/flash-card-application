@@ -1,55 +1,34 @@
 version: "3"
 services:
   api:
-    command: [bash, -c, "npm install --only=production && npm run prisma:deploy && npm run prisma:generate && node src/index.js"]
-    volumes:
-      # Used when we are using sqlite file-based storage,
-      # Works in tandem with the DATABASE_URL environment variable.
-      # In such cases where we are using a sqlite file-based storage,
-      # the DATABASE_URL environment value should follow the syntax:
-      #  "file:/data/prisma/[DATABASE_NAME].db"
-      # When using a database other than sqlite or file-based storage,
-      # This volume has no effect, that is, it does nothing, and can be commented out
-      - ./data/prisma/:/data/prisma/
+    command: [bash, -c, "npm install --only=production && npm run prisma:generate && node src/index.js"]
+    ports:
+      - "${API_APP_PORT}:${API_APP_PORT}"
     environment:
+      APP_PORT: "${API_APP_PORT}"
+      ENABLE_HTTPS: 0
       NODE_ENV: "development"
-
-      # Overwrite the database URL and use sqlite file storage
-      # This should be commented out or changed to the appropriate
-      # data-source URL if not using a (sqlite) file-based data storage
-      DATABASE_URL: "file:/data/prisma/dev.db"
   client:
     command: [bash, -c, "yarn install && yarn start"]
-    #volumes:
-    #  - ../ssl:/usr/src/app/ssl/:ro
-    #environment:
-      # Override the HOSTs set inside the frontend/.env file
-      # because when making calls to the
-      # frontend (client) and backend (api) services,
-      # the host inside the docker container will be
-      # identified using the docker container name
-      # not the host set in the .env file.
-      # We prepend it with the "http(s)://" scheme since the request module
-      # which we use to make calls only supports htttp(s) protocols
-      #APP_HOST: nginx
-      #API_HOST: nginx
-
-      # WARNING: Temporarily disable the self-signed certificate error
-      # Remember to remove this line on live production
-      # See this post for security implications of this
-      # https://stackoverflow.com/a/21961005/1743192
-      # NODE_TLS_REJECT_UNAUTHORIZED: "0"
-
-      # Used in conjunction with the ../ssl:/usr/src/app/ssl volume
-      # Fix for: Error in Service::request():
-      # FetchError: request to https://nginx/api/v1/... failed,
-      # - reason: self-signed certificate (fixed by creating trusted self-signed certificate, see process in the <root>/ssl/directory)
-      # - reason: unable to verify the first certificate (fixed by creating a fullchain.pem file)
-      # - reason: self signed certificate in certificate chain (fixed by adding my rootCA.pem to Node's internal trusted CAs)
-      #NODE_EXTRA_CA_CERTS: "/usr/src/app/ssl/keys/rootCA.pem"
-  mongo:
     ports:
-      - "${MONGODB_PORT}:27017"
-  redis:
-    ports:
-      - "${REDIS_PORT}:6379"
+      - "${CLIENT_APP_PORT}:8080"
+    environment:
+      API_URL: "http://${API_APP_HOST}:${API_APP_PORT}/graphql"
+  nginx:
+    # Disable the nginx service (https://stackoverflow.com/a/54214179/1743192)
+    # since the client will be running on webpack's dev server,
+    # which we have set to run on port 8080 inside the webpack config file.
+    entrypoint: ["echo", "nginx service disabled"]
+    #ports:
+      # We don't need nginx to listen for incoming connections
+      # since the client will be running on webpack's dev server,
+      # which we have set to run on port 8080 inside the webpack config file.
+      # So, just expose arbitrary ports that the user is not likely to access
+      # This ensures that if we access the production reserved ports 80 or 443 or 3000,
+      # during development, say for example, we set these values in the .env file,
+      # it does not try to route the requests via nginx,
+      # but instead uses the ports to directly the api and client containers via
+      # port bindings to the host.
+      #- "1234:80"
+      #- "1235:443"
+      #- "1236:${API_APP_PORT}"

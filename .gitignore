@@ -10,3 +10,4 @@ docker/logs
 docker/ssl
 ssl/keys
 server.csr.cnf
+node_modules

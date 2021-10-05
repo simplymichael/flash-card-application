@@ -1,0 +1,34 @@
+{
+  "name": "flash-cards-dockerized",
+  "version": "1.0.0",
+  "description": "Dockerized version of the flash-cards application (api and frontend)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npm run dev:api:up && npm run dev:app:up",
+    "start": "npm run prod:app:up",
+    "dev:api:up": "cd api && npm run redis:up && npm run db:up",
+    "dev:app:up": "cd docker && docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d client",
+    "prod:app:up": "cd docker && docker-compose up -d nginx",
+    "dev:app:down": "npm run dev:api:down && cd docker && docker-compose down",
+    "prod:app:down": "cd docker && docker-compose down",
+    "dev:api:down": "npm run dev:api:backup && cd api && npm run db:down && npm run redis:stop",
+    "dev:api:backup": "cd api && npm run db:backup",
+    "dev:api:restore": "cd api && npm run db:restore"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simplymichael/flash-card-application.git"
+  },
+  "keywords": [
+    "flash cards",
+    "memorize",
+    "memory helper"
+  ],
+  "author": "simplymichael <simplymichaelorji@gmail.com> (https://github.com/simplymichael)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/simplymichael/flash-card-application/issues"
+  },
+  "homepage": "https://github.com/simplymichael/flash-card-application#readme"
+}
