@@ -4,3 +4,6 @@
 [submodule "frontend"]
 	path = frontend
 	url = https://github.com/simplymichael/flash-front.git
+[submodule "flash-ssr"]
+	path = flash-ssr
+	url = https://github.com/simplymichael/flash-ssr.git
