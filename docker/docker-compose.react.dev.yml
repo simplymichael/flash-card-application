@@ -1,0 +1,4 @@
+version: "3"
+services:
+  client:
+    command: [bash, -c, "yarn install && yarn start"]

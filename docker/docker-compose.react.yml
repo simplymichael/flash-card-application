@@ -1,0 +1,14 @@
+version: "3"
+services:
+  client:
+    # (In production mode) after creating our build,
+    # this container has nothing doing and exits with code 0 (zero)
+    # This causes our nginx service, which depends on this service, not to start.
+    # The "tail -F /dev/null" command makes sure this container does not exit.
+    # Credits: https://stackoverflow.com/a/45450456/1743192
+    command: [bash, -c, "yarn install && yarn build && tail -F /dev/null"]
+    volumes:
+      - ../frontend:/usr/src/app/client/
+  nginx:
+    volumes:
+      - ../frontend/build/:/usr/share/nginx/html/

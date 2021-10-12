@@ -3,15 +3,23 @@ services:
   api:
     command: [bash, -c, "npm install --only=production && npm run prisma:generate && node src/index.js"]
     ports:
-      - "${API_APP_PORT}:${API_APP_PORT}"
+      - "${API_APP_PORT}:3000"
     environment:
-      APP_PORT: "${API_APP_PORT}"
+      APP_PORT: 3000
       ENABLE_HTTPS: 0
       NODE_ENV: "development"
   client:
-    command: [bash, -c, "yarn install && yarn start"]
+    # The touch .env is to create an empty .env file inside the nexjs app (flash-ssr) directory.
+    # We don't need a .env file, but to avoid nextjs' warning that
+    # it is unable to load a .env file, we create a .env file (if one doesn't exist)
+    # If filename exists, only its modification and access times will be changed. Data will remain the same.
+    # If filename does not exist, a zero-byte file will be created with the current time as the access and modification time.
+    # And if you don't want to modify the access and modification times when the file (a regular file) exists, try:
+    # [[ -f filename ]] || touch filename
+    # Credits: https://www.unix.com/shell-programming-and-scripting/216120-check-file-touch-if-not-exist.html
+    command: [bash, -c, "yarn install && touch .env && yarn dev -- -p 80"]
     ports:
-      - "${CLIENT_APP_PORT}:8080"
+      - "${CLIENT_APP_PORT}:80"
     environment:
       API_URL: "http://${API_APP_HOST}:${API_APP_PORT}/graphql"
   nginx:
