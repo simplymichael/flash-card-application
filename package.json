@@ -5,18 +5,20 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npm run dev:api:up && npm run dev:app:up",
     "start": "cd docker && docker-compose up -d nginx && cd ..",
     "down": "npm run app:down",
     "app:down": "cd docker && docker-compose down && cd ..",
-    "dev:down": "npm run dev:api:down && npm run app:down",
+    "dev:down": "npm run dev:datastores:down && npm run app:down",
 
-    "dev:api:up": "cd api && npm run redis:up && npm run db:up && cd ..",
+    "dev:datastores:up": "cd api && npm run redis:up && npm run db:up && cd ..",
     "dev:app:up": "cd docker && docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d client && cd ..",
 
-    "dev:api:down": "npm run dev:api:backup && cd api && npm run db:down && npm run redis:stop && cd ..",
-    "dev:api:backup": "cd api && npm run db:backup && cd ..",
-    "dev:api:restore": "cd api && npm run db:restore && cd .."
+    "dev:datastores:down": "npm run dev:datastores:backup && cd api && npm run db:down && npm run redis:stop && cd ..",
+    "dev:datastores:backup": "cd api && npm run db:backup && cd ..",
+    "dev:datastores:restore": "cd api && npm run db:restore && cd ..",
+
+    "dev:app:up:react": "cd docker && docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.react.yml -f docker-compose.react.dev.yml up -d client && cd ..",
+    "start:react": "cd docker && docker-compose -f docker-compose.yml -f docker-compose.react.yml"
   },
   "repository": {
     "type": "git",

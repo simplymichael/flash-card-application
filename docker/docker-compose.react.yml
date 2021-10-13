@@ -6,6 +6,15 @@ services:
     # This causes our nginx service, which depends on this service, not to start.
     # The "tail -F /dev/null" command makes sure this container does not exit.
     # Credits: https://stackoverflow.com/a/45450456/1743192
+    #
+    # The touch .env is to create an empty .env file inside the nexjs app (flash-ssr) directory.
+    # We don't need a .env file, but to avoid webpack's warning that
+    # it is unable to load a .env file, we create a .env file (if one doesn't exist)
+    # If filename exists, only its modification and access times will be changed. Data will remain the same.
+    # If filename does not exist, a zero-byte file will be created with the current time as the access and modification time.
+    # And if you don't want to modify the access and modification times when the file (a regular file) exists, try:
+    # [[ -f filename ]] || touch filename
+    # Credits: https://www.unix.com/shell-programming-and-scripting/216120-check-file-touch-if-not-exist.html
     command: [bash, -c, "yarn install && yarn build && tail -F /dev/null"]
     volumes:
       - ../frontend:/usr/src/app/client/
