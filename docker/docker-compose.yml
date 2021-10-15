@@ -50,12 +50,6 @@ services:
     container_name: "${APP_NAME}_client"
     image: node:14.15.5
 
-    # (In production mode) after creating our build,
-    # this container has nothing doing and exits with code 0 (zero)
-    # This causes our nginx service, which depends on this service, not to start.
-    # The "tail -F /dev/null" command makes sure this container does not exit.
-    # Credits: https://stackoverflow.com/a/45450456/1743192
-    #
     # The touch .env is to create an empty .env file inside the nexjs app (flash-ssr) directory.
     # We don't need a .env file, but to avoid nextjs' warning that
     # it is unable to load a .env file, we create a .env file (if one doesn't exist)
@@ -64,7 +58,7 @@ services:
     # And if you don't want to modify the access and modification times when the file (a regular file) exists, try:
     # [[ -f filename ]] || touch filename
     # Credits: https://www.unix.com/shell-programming-and-scripting/216120-check-file-touch-if-not-exist.html
-    command: [bash, -c, "yarn install && touch .env && yarn build && tail -F /dev/null"]
+    command: [bash, -c, "yarn install && touch .env && yarn build && yarn start -- -p 443"]
     restart: always
     working_dir: /usr/src/app/client/
     volumes:
@@ -91,7 +85,7 @@ services:
       # Remember to remove this line on live production
       # See this post for security implications of this
       # https://stackoverflow.com/a/21961005/1743192
-      # NODE_TLS_REJECT_UNAUTHORIZED: "0"
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED}
 
       # Used in conjunction with the ./ssl:/usr/src/app/ssl volume
       # Fix for next js build error:
@@ -109,7 +103,7 @@ services:
       # Every request comes into the nginx server, via ports: 80, 443, 0r 3000,
       # which routes them (using the default.conf file) as follows:
       # - 80 -> 443
-      # - 443 -> (serves the application frontend from /usr/shar/nginx/html/index.html)
+      # - 443 -> http://client:80
       # - 3000 -> https://api:443 (serves the application backend/api)
       #
       - "80:80"
@@ -117,12 +111,7 @@ services:
       - "${API_APP_PORT}:3000"
     volumes:
       - ./ssl/keys/:/etc/letsencrypt/
-
-      # Since we only invoked "next build" (via yarn build) but not "next start"
-      # in the "client" service's command section, we are not using next.js' built-in server;
-      # rather, we are serving the built files from nginx's html directory
-      - ../flash-ssr/.next/:/usr/share/nginx/html/
-      - ./conf/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./conf/nginx/next.js.conf:/etc/nginx/conf.d/default.conf
     networks:
       - web
     #environment:

@@ -18,7 +18,7 @@
     "dev:datastores:restore": "cd api && npm run db:restore && cd ..",
 
     "dev:app:up:react": "cd docker && docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.react.yml -f docker-compose.react.dev.yml up -d client && cd ..",
-    "start:react": "cd docker && docker-compose -f docker-compose.yml -f docker-compose.react.yml"
+    "start:react": "cd docker && docker-compose -f docker-compose.yml -f docker-compose.react.yml up -d nginx && cd .."
   },
   "repository": {
     "type": "git",
