@@ -17,7 +17,8 @@ services:
     # And if you don't want to modify the access and modification times when the file (a regular file) exists, try:
     # [[ -f filename ]] || touch filename
     # Credits: https://www.unix.com/shell-programming-and-scripting/216120-check-file-touch-if-not-exist.html
-    command: [bash, -c, "yarn install && touch .env && yarn dev -- -p 80"]
+    #command: [bash, -c, "yarn install && touch .env && yarn dev -- -p 80"]
+    command: [bash, -c, "yarn install && touch .env && yarn next dev -- -p 80"]
     ports:
       - "${CLIENT_APP_PORT}:80"
     environment:

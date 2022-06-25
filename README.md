@@ -22,6 +22,9 @@ Dockerized version of the flash-cards application (api and frontend)
       By default, when you run `npm run dev:app:up` the Next.js client is used for SSR purposes.
       To use plain React (without SSR functionality) instead, run `npm run dev:app:up:react`.
 
+      The app should now be accessible at `http://locahost:CLIENT_APP_PORT`.
+      Where `CLIENT_APP_PORT` is the value set in the */docker/.enf* file.
+
 - **Production**
     - Run `npm start`
 
